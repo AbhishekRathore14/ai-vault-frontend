@@ -4,8 +4,9 @@ import { useParams } from "next/navigation";
 import Link from "next/link";
 
 export default function NoteDetail() {
-  const params = useParams();
-  const { id } = params;
+  const [summary, setSummary] = useState("");
+  const [isSummarizing, setIsSummarizing] = useState(false);
+  const { id } = useParams();
 
   const [note, setNote] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,19 @@ export default function NoteDetail() {
     };
     fetchNote();
   }, [id]);
+
+  const handleGetSummary = async () => {
+  setIsSummarizing(true);
+  try {
+    const res = await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}/summary`);
+    const data = await res.json();
+    setSummary(data.summary);
+  } catch (err) {
+    console.error("Could not get summary", err);
+  } finally {
+    setIsSummarizing(false);
+  }
+};
 
   const handleQuery = async (e) => {
     e.preventDefault();
@@ -98,6 +112,24 @@ export default function NoteDetail() {
               </div>
             ) : (
               <>
+            {/* NEW AI SUMMARY GENERATOR BOX */}
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl mb-6">
+             <div className="flex justify-between items-center mb-2">
+              <h3 className="text-[10px] font-black uppercase tracking-widest text-blue-600">AI Instant Overview</h3>
+              <button 
+                onClick={handleGetSummary}
+                disabled={isSummarizing}
+                className="text-[10px] font-bold bg-blue-600 text-white px-3 py-1.5 rounded-lg hover:bg-blue-700 transition-all disabled:opacity-50"
+                >
+                {isSummarizing ? "Analyzing..." : "Generate AI Summary"}
+              </button>
+            </div>
+            {summary ? (
+             <p className="text-sm text-slate-700 leading-relaxed italic font-medium">"{summary}"</p>
+             ) : (
+             <p className="text-[11px] text-slate-400 italic">Click the button above to generate a concise 2-sentence summary of this note.</p>
+            )}
+           </div>
                 <div>
                   <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider mb-1">Summary</h3>
                   <p className="text-gray-900">{note.summary}</p>
