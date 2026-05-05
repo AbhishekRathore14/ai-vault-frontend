@@ -8,7 +8,7 @@ export default function Home() {
 
   const fetchNotes = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/notes");
+      const res = await fetch("https://ai-vault-backend-2hx1.onrender.com/api/notes");
       setNotes(await res.json());
     } catch (error) {
       console.error("Error fetching notes:", error);
@@ -19,7 +19,7 @@ export default function Home() {
 
   const deleteNote = async (id) => {
     if (!confirm("Are you sure you want to delete this note?")) return;
-    await fetch(`http://localhost:5000/api/notes/${id}`, { method: 'DELETE' });
+    await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}`, { method: 'DELETE' });
     fetchNotes();
   };
 
