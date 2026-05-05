@@ -19,7 +19,7 @@ export default function NoteDetail() {
   useEffect(() => {
     const fetchNote = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/notes/${id}`);
+        const res = await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}`);
         if (!res.ok) throw new Error("Note not found");
         setNote(await res.json());
       } catch (err) {
@@ -43,7 +43,7 @@ export default function NoteDetail() {
     setChatHistory(prev => [...prev, { role: 'user', content: userQ }]);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/notes/${id}/query`, {
+      const res = await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: userQ }),
