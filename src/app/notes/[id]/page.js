@@ -1,0 +1,188 @@
+"use client";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import Link from "next/link";
+
+export default function NoteDetail() {
+  const params = useParams();
+  const { id } = params;
+
+  const [note, setNote] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Chat States
+  const [question, setQuestion] = useState("");
+  const [isQuerying, setIsQuerying] = useState(false);
+  const [chatHistory, setChatHistory] = useState([]);
+
+  useEffect(() => {
+    const fetchNote = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/notes/${id}`);
+        if (!res.ok) throw new Error("Note not found");
+        setNote(await res.json());
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNote();
+  }, [id]);
+
+  const handleQuery = async (e) => {
+    e.preventDefault();
+    if (!question.trim()) return;
+
+    setIsQuerying(true);
+    const userQ = question;
+    setQuestion(""); // Clear input
+
+    // Add user question to UI immediately
+    setChatHistory(prev => [...prev, { role: 'user', content: userQ }]);
+
+    try {
+      const res = await fetch(`http://localhost:5000/api/notes/${id}/query`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: userQ }),
+      });
+
+      const data = await res.json();
+      
+      if (res.ok && data.answer) {
+        setChatHistory(prev => [...prev, { role: 'ai', content: data.answer }]);
+      } else {
+        setChatHistory(prev => [...prev, { role: 'error', content: "Failed to get an answer from the AI." }]);
+      }
+    } catch (err) {
+      setChatHistory(prev => [...prev, { role: 'error', content: "Error connecting to the server." }]);
+    } finally {
+      setIsQuerying(false);
+    }
+  };
+
+  if (loading) return <div className="p-12 text-center text-lg text-black">Loading note...</div>;
+  if (error) return <div className="p-12 text-center text-red-500 font-bold">{error}</div>;
+
+  const isProcessing = note.status === "processing";
+
+  return (
+    <div className="min-h-screen bg-gray-100 py-12 px-4 text-black">
+      <main className="max-w-4xl mx-auto space-y-6">
+        
+        {/* Navigation */}
+        <Link href="/" className="text-blue-600 hover:underline font-medium mb-4 inline-block">
+          ← Back to Vault
+        </Link>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* LEFT SIDE: Note Details */}
+          <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+            <div className="flex justify-between items-center border-b pb-4">
+              <h1 className="text-2xl font-bold">{note.title}</h1>
+              <span className={`px-3 py-1 text-xs font-bold rounded-full ${isProcessing ? 'bg-yellow-100 text-yellow-800' : note.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                {note.status.toUpperCase()}
+              </span>
+            </div>
+
+            {isProcessing ? (
+              <div className="p-4 bg-blue-50 text-blue-800 rounded border border-blue-200">
+                <p>The AI is currently analyzing this note. Refresh the page in a few seconds.</p>
+              </div>
+            ) : note.status === 'failed' ? (
+               <div className="p-4 bg-red-50 text-red-800 rounded border border-red-200">
+                <p>The AI failed to process this note. Please try creating it again.</p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider mb-1">Summary</h3>
+                  <p className="text-gray-900">{note.summary}</p>
+                </div>
+                
+                {note.keyPoints && note.keyPoints.length > 0 && (
+                  <div>
+                    <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider mb-1">Key Points</h3>
+                    <ul className="list-disc list-inside text-gray-900">
+                      {note.keyPoints.map((kp, i) => <li key={i}>{kp}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {note.tags && note.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2 pt-2">
+                    {note.tags.map((tag, i) => (
+                      <span key={i} className="bg-gray-200 text-gray-800 text-xs px-2 py-1 rounded-md border border-gray-300">
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+            
+            <div className="mt-6 pt-4 border-t">
+               <h3 className="font-bold text-gray-700 uppercase text-xs tracking-wider mb-2">Original Content</h3>
+               <p className="text-gray-600 text-sm whitespace-pre-wrap max-h-40 overflow-y-auto p-2 bg-gray-50 rounded border">{note.content}</p>
+            </div>
+          </div>
+
+          {/* RIGHT SIDE: Smart Query Chat */}
+          <div className="bg-white p-6 rounded-xl shadow border flex flex-col h-[600px]">
+            <h2 className="text-xl font-bold border-b pb-4 mb-4">Smart Query</h2>
+            
+            {/* Chat History Area */}
+            <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2">
+              {chatHistory.length === 0 ? (
+                <p className="text-gray-400 text-center text-sm italic mt-10">Ask a question about your note...</p>
+              ) : (
+                chatHistory.map((msg, i) => (
+                  <div key={i} className={`p-3 rounded-lg max-w-[85%] ${
+                    msg.role === 'user' ? 'bg-blue-600 text-white self-end ml-auto' : 
+                    msg.role === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
+                    'bg-gray-100 text-gray-900 border border-gray-200'
+                  }`}>
+                    <p className="text-sm font-medium mb-1 opacity-70">
+                      {msg.role === 'user' ? 'You' : msg.role === 'error' ? 'System' : 'AI'}
+                    </p>
+                    <p>{msg.content}</p>
+                  </div>
+                ))
+              )}
+              {isQuerying && (
+                <div className="p-3 rounded-lg bg-gray-100 text-gray-900 w-fit">
+                  <p className="text-sm italic text-gray-500">AI is thinking...</p>
+                </div>
+              )}
+            </div>
+
+            {/* Input Area */}
+            <form onSubmit={handleQuery} className="mt-auto">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  disabled={isProcessing || isQuerying || note.status === 'failed'}
+                  placeholder={isProcessing ? "Waiting for AI analysis..." : "Ask something..."}
+                  className="flex-1 p-3 border rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button 
+                  type="submit" 
+                  disabled={isProcessing || isQuerying || !question.trim() || note.status === 'failed'}
+                  className="bg-blue-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                >
+                  Send
+                </button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  );
+}
