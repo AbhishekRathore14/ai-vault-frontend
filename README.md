@@ -1,36 +1,49 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# AI Knowledge Vault
 
-## Getting Started
+A full-stack AI-powered knowledge management system built with Next.js, Node.js, MongoDB, and OpenRouter (Gemini 2.0 Flash).
 
-First, run the development server:
+1. Live Application:https://ai-vault-frontend-liard.vercel.app/
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+2. Backend API: https://ai-vault-backend-2hx1.onrender.com
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+3. github backend: https://github.com/AbhishekRathore14/ai-vault-backend
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+4. github frontend: https://github.com/AbhishekRathore14/ai-vault-frontend
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Tech Stack
+1. Frontend: Next.js, Tailwind CSS, React Hooks
+   
+2. Backend: Node.js, Express.js
+   
+3. Database: MongoDB (Mongoose)
+   
+4. AI Provider: OpenRouter API
 
-## Learn More
+## Setup Instructions
 
-To learn more about Next.js, take a look at the following resources:
+### Backend
+1. Navigate to `ai-vault-backend`
+2. Run `npm install`
+3. Create a `.env` file based on `.env.example` and add your MongoDB URI and OpenRouter API Key.
+4. Run `npm start` (Runs on port 5000)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### Frontend
+1. Navigate to `ai-vault-frontend`
+2. Run `npm install`
+3. Run `npm run dev` (Runs on port 3000)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture & Strategy
 
-## Deploy on Vercel
+### Async Processing
+To ensure the HTTP response isn't blocked during note creation, the system saves the initial document to MongoDB with a `processing` status and immediately returns a 201 response to the client. The AI processing (OpenRouter call) is triggered asynchronously in the background. Once the promise resolves, the document is updated with the generated payload and marked as `ready`. If the AI call fails, it gracefully falls back to a `failed` status to prevent infinite loading states.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Prompt Strategy
+The system uses strict system prompts instructing the Gemini model to return outputs exclusively as valid JSON objects. By using OpenRouter's `response_format: { type: "json_object" }`, we guarantee predictable parsing on the backend. For the Smart Query feature, the original content is concatenated with the generated summary and key points to provide the LLM with maximum context for highly accurate answers.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Trade-offs
+* **Styling:** Opted for simple Tailwind utility classes over a complex component library (like shadcn/ui) to prioritize core backend functionality and async logic within the time constraint.
+* **Database:** Used MongoDB directly via Mongoose for rapid schema iteration, prioritizing speed of development over the rigid structure of a SQL database.
+
+### Optional Extensions Implemented
+1. **Tag-based search / filtering:** Added a live search bar on the frontend to instantly filter notes by title or generated tags.
+2. **Rate limiting on AI endpoints:** Implemented `express-rate-limit` on the backend to protect the OpenRouter API from spam and control potential API costs in a production environment.
