@@ -102,13 +102,20 @@ export default function NoteDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* LEFT SIDE: Note Details */}
-          <div className="bg-white p-6 rounded-xl shadow border space-y-4">
-            <div className="flex justify-between items-center border-b pb-4">
-              <h1 className="text-2xl font-bold">{note.title}</h1>
-              <span className={`px-3 py-1 text-xs font-bold rounded-full ${isProcessing ? 'bg-yellow-100 text-yellow-800' : note.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                {note.status.toUpperCase()}
-              </span>
-            </div>
+           <div className="bg-white p-6 rounded-xl shadow border space-y-4">
+           <div className="flex justify-between items-start border-b pb-4 mb-4">
+          <div>
+            <h1 className="text-2xl font-bold">{note.title}</h1>
+            {note.createdAt && (
+              <p className="text-sm text-gray-500 mt-1">
+                {new Date(note.createdAt).toLocaleDateString()} at {new Date(note.createdAt).toLocaleTimeString()}
+              </p>
+            )}
+          </div>
+          <span className={`px-3 py-1 text-xs font-bold rounded-full ${isProcessing ? 'bg-yellow-100 text-yellow-800' : note.status === 'failed' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+            {note.status.toUpperCase()}
+          </span>
+          </div>
 
             {isProcessing ? (
               <div className="p-4 bg-blue-50 text-blue-800 rounded border border-blue-200">

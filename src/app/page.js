@@ -99,6 +99,11 @@ export default function Home() {
                   
                   <div className="flex-1">
                     <h3 className="text-xl font-bold text-slate-800 tracking-tight">{note.title}</h3>
+                    {note.createdAt && (
+                     <p className="text-sm text-slate-500 mt-1 mb-2">
+                        {new Date(note.createdAt).toLocaleDateString()}
+                     </p>
+                      )}
                     <div className="flex flex-wrap items-center gap-2 mt-3">
                       <span className={`text-[10px] font-black px-3 py-1.5 rounded-lg tracking-wider uppercase ${
                         note.status === 'ready' ? 'bg-emerald-100/50 text-emerald-700' :
