@@ -93,7 +93,7 @@ export default function NoteDetail() {
     });
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/${note._id}/query`, {
+      const res = await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: qToAsk }),
