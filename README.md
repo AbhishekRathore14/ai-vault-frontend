@@ -2,15 +2,15 @@
 
 A full-stack AI-powered knowledge management system built with Next.js, Node.js, MongoDB, and OpenRouter (Gemini 2.0 Flash).
 
-Live Application:https://ai-vault-frontend-liard.vercel.app/
+1. Live Application:https://ai-vault-frontend-liard.vercel.app/
 
-Backend API: https://ai-vault-backend-2hx1.onrender.com
+2. Backend API: https://ai-vault-backend-2hx1.onrender.com
 
-github backend: https://github.com/AbhishekRathore14/ai-vault-backend
+3. github backend: https://github.com/AbhishekRathore14/ai-vault-backend
 
-github frontend: https://github.com/AbhishekRathore14/ai-vault-frontend
+4. github frontend: https://github.com/AbhishekRathore14/ai-vault-frontend
 
-###Tech Stack
+### Tech Stack
 1. Frontend: Next.js, Tailwind CSS, React Hooks
    
 2. Backend: Node.js, Express.js
