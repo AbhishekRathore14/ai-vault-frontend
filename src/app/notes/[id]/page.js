@@ -45,33 +45,66 @@ export default function NoteDetail() {
   }
 };
 
-  const handleQuery = async (e) => {
+  // 1. LOCAL SEARCH HANDLER
+  const handleQuery = (e) => {
     e.preventDefault();
     if (!question.trim()) return;
 
-    setIsQuerying(true);
     const userQ = question;
-    setQuestion(""); // Clear input
+    setQuestion(""); // clear input
 
     // Add user question to UI immediately
-    setChatHistory(prev => [...prev, { role: 'user', content: userQ }]);
+    setChatHistory((prev) => [...prev, { role: 'user', content: userQ }]);
+
+    // Scan local text for matching keywords (longer than 3 letters)
+    const searchTerms = userQ.toLowerCase().split(' ').filter(w => w.length > 3);
+    let localMatches = [];
+
+    if (searchTerms.length > 0 && note.content) {
+      const sentences = note.content.split('. ');
+      localMatches = sentences.filter(sentence => 
+        searchTerms.some(term => sentence.toLowerCase().includes(term))
+      ).slice(0, 2); 
+    }
+
+    // Format the local response
+    const systemReply = localMatches.length > 0 
+      ? "🔍 **Fast Local Search:**\n\n" + localMatches.map(m => `• "...${m.trim()}..."`).join('\n\n')
+      : "🔍 *No direct keyword matches found in the local text.*";
+
+    // Add local result to chat AND show the AI button
+    setChatHistory((prev) => [...prev, { 
+      role: 'system-local', 
+      content: systemReply, 
+      originalQuestion: userQ, 
+      showAiButton: true 
+    }]);
+  };
+
+  // 2. THE AI FALLBACK (Triggered by the button)
+  const triggerAiAgent = async (qToAsk, messageIndex) => {
+    setIsQuerying(true);
+    
+    // Hide the button so they can't click it twice
+    setChatHistory((prev) => {
+      const newHistory = [...prev];
+      newHistory[messageIndex].showAiButton = false;
+      return newHistory;
+    });
 
     try {
-      const res = await fetch(`https://ai-vault-backend-2hx1.onrender.com/api/notes/${id}/query`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/notes/${note._id}/query`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: userQ }),
+        body: JSON.stringify({ question: qToAsk }),
       });
 
+      if (!res.ok) throw new Error("API failed");
       const data = await res.json();
       
-      if (res.ok && data.answer) {
-        setChatHistory(prev => [...prev, { role: 'ai', content: data.answer }]);
-      } else {
-        setChatHistory(prev => [...prev, { role: 'error', content: "Failed to get an answer from the AI." }]);
-      }
-    } catch (err) {
-      setChatHistory(prev => [...prev, { role: 'error', content: "Error connecting to the server." }]);
+      setChatHistory((prev) => [...prev, { role: 'ai', content: data.answer }]);
+    } catch (error) {
+      setChatHistory((prev) => [...prev, { role: 'error', content: "AI Agent failed." }]);
     } finally {
       setIsQuerying(false);
     }
@@ -187,17 +220,33 @@ export default function NoteDetail() {
                 <p className="text-gray-400 text-center text-sm italic mt-10">Ask a question about your note...</p>
               ) : (
                 chatHistory.map((msg, i) => (
-                  <div key={i} className={`p-3 rounded-lg max-w-[85%] ${
-                    msg.role === 'user' ? 'bg-blue-600 text-white self-end ml-auto' : 
-                    msg.role === 'error' ? 'bg-red-100 text-red-800 border border-red-200' : 
-                    'bg-gray-100 text-gray-900 border border-gray-200'
-                  }`}>
-                    <p className="text-sm font-medium mb-1 opacity-70">
-                      {msg.role === 'user' ? 'You' : msg.role === 'error' ? 'System' : 'AI'}
-                    </p>
-                    <p>{msg.content}</p>
-                  </div>
-                ))
+              <div key={i} className={`p-4 rounded-xl max-w-[85%] ${
+                msg.role === 'user' ? 'bg-slate-800 text-white self-end ml-auto' : 
+                msg.role === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+                msg.role === 'system-local' ? 'bg-slate-100 text-slate-700 border border-slate-200' :
+                'bg-blue-50 text-blue-900 border border-blue-200 shadow-sm'
+              }`}>
+                
+                <p className="text-xs font-bold mb-2 opacity-70 uppercase tracking-widest">
+                  {msg.role === 'user' ? 'You' : 
+                   msg.role === 'error' ? 'Error' : 
+                   msg.role === 'system-local' ? 'Local Search' : '🤖 AI Web Agent'}
+                </p>
+                
+                <p className="whitespace-pre-wrap text-sm leading-relaxed">{msg.content}</p>
+
+                {/* THE COST-SAVER BUTTON */}
+                {msg.showAiButton && (
+                  <button 
+                    onClick={() => triggerAiAgent(msg.originalQuestion, i)}
+                    disabled={isQuerying}
+                    className="mt-4 w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {isQuerying ? "Asking AI..." : "Need deeper analysis? Ask AI Web Agent"}
+                  </button>
+                )}
+              </div>
+            ))
               )}
               {isQuerying && (
                 <div className="p-3 rounded-lg bg-gray-100 text-gray-900 w-fit">
